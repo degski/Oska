@@ -1,0 +1,112 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United Kingdom) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value addd first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "logo.ico"
+
+#endif    // English (United Kingdom) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// FILEDATA
+//
+
+BOARD_BACKGROUND_W4_SMALL 			FILEDATA	"bg_w4_small.png"
+BOARD_BACKGROUND_W4_MEDIUM			FILEDATA	"bg_w4_medium.png"
+BOARD_BACKGROUND_W4_LARGE			FILEDATA	"bg_w4_large.png"
+
+BOARD_BACKGROUND_W5_SMALL 			FILEDATA	"bg_w5_small.png"
+BOARD_BACKGROUND_W5_MEDIUM			FILEDATA	"bg_w5_medium.png"
+BOARD_BACKGROUND_W5_LARGE			FILEDATA	"bg_w5_large.png"
+
+BOARD_BACKGROUND_W6_SMALL 			FILEDATA	"bg_w6_small.png"
+BOARD_BACKGROUND_W6_MEDIUM			FILEDATA	"bg_w6_medium.png"
+BOARD_BACKGROUND_W6_LARGE			FILEDATA	"bg_w6_large.png"
+
+BOARD_BACKGROUND_W7_SMALL 			FILEDATA	"bg_w7_small.png"
+BOARD_BACKGROUND_W7_MEDIUM			FILEDATA	"bg_w7_medium.png"
+BOARD_BACKGROUND_W7_LARGE			FILEDATA	"bg_w7_large.png"
+
+BOARD_BACKGROUND_W8_SMALL 			FILEDATA	"bg_w8_small.png"
+BOARD_BACKGROUND_W8_MEDIUM			FILEDATA	"bg_w8_medium.png"
+BOARD_BACKGROUND_W8_LARGE			FILEDATA	"bg_w8_large.png"
+
+AGENT_STONE_W8_SMALL     			FILEDATA    "bs_w8_large.png"
+AGENT_STONE_W8_MEDIUM     			FILEDATA    "bs_w8_large.png"
+AGENT_STONE_W8_LARGE     			FILEDATA    "bs_w8_large.png"
+
+HUMAN_STONE_W8_SMALL     			FILEDATA    "ws_w8_large.png"
+HUMAN_STONE_W8_MEDIUM     			FILEDATA    "ws_w8_large.png"
+HUMAN_STONE_W8_LARGE     			FILEDATA    "ws_w8_large.png"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+__REGULAR_FONT__		FILEDATA				"Sk-Modernist-Regular.otf"
+__BOLD_FONT__			FILEDATA				"Sk-Modernist-Bold.otf"
+__MONO_FONT__			FILEDATA				"Sk-Modernist-Mono.otf"
+__NUMBERS_FONT__		FILEDATA				"Transistor Regular.ttf"
