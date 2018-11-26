@@ -293,6 +293,16 @@ public:
     }
 };
 
+float Hexagon::m_hori;
+float Hexagon::m_hori;
+float Hexagon::m_vert;
+float Hexagon::m_2_vert;
+float Hexagon::m_2_vert_hori;
+float Hexagon::m_center_l2radius;
+
+std::normal_distribution<float> Hexagon::m_disx;
+std::normal_distribution<float> Hexagon::m_disy;
+
 
 using StoneID = boost::container::static_vector<std::int8_t, 8>;
 
