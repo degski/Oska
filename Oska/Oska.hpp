@@ -188,6 +188,9 @@ struct Move { // 4
     }
 };
 
+const Move Move::none = Move ( Location ( -1, -1 ), Location ( -1, -1 ) );
+const Move Move::root = Move ( Location ( -2, -2 ), Location ( -2, -2 ) );
+const Move Move::invalid;
 
 #define NO_COLS( S ) ( S )
 #define NO_ROWS( S ) ( 2 * ( ( S ) - 2 ) + 1 )
@@ -293,7 +296,6 @@ public:
     }
 };
 
-float Hexagon::m_hori;
 float Hexagon::m_hori;
 float Hexagon::m_vert;
 float Hexagon::m_2_vert;

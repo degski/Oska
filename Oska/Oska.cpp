@@ -26,21 +26,6 @@
 #include "Oska.hpp"
 
 
-const Move Move::none = Move ( Location ( -1, -1 ), Location ( -1, -1 ) );
-const Move Move::root = Move ( Location ( -2, -2 ), Location ( -2, -2 ) );
-const Move Move::invalid;
-
-
-float Hexagon::m_hori;
-float Hexagon::m_vert;
-float Hexagon::m_2_vert;
-float Hexagon::m_2_vert_hori;
-float Hexagon::m_center_l2radius;
-
-std::normal_distribution<float> Hexagon::m_disx;
-std::normal_distribution<float> Hexagon::m_disy;
-
-
 #include <cassert>      // assert
 #include <cstdint>      // uintptr_t
 #include <cstdlib>      // std::malloc, std::size_t
