@@ -37,6 +37,9 @@
 #include "splitmix.hpp"
 
 
+#define NO_DEFAULT_CASE default: abort ( )
+
+
 // C++ global constants have static linkage. This is different from C. If you try to use a global
 // constant in C++ in multiple files you get an unresolved external error. The compiler optimizes
 // global constants out, leaving no space reserved for the variable. One way to resolve this error

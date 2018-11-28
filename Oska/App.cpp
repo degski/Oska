@@ -31,101 +31,64 @@
 
 
 bool OutBox::isInside ( const Point & p_ ) const noexcept {
-
 	// http://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
-
 	const float s = s0 + s1 * p_.x + s2 * p_.y;
-
 	if ( s <= 0.0f ) {
-
 		return false;
 	}
-
 	const float t = t0 + t1 * p_.x + t2 * p_.y;
-
 	return t > 0.0f and ( s + t ) <= a;
 }
 
-void OutBox::initialise ( const Point & p0_, const Point & p1_, const Point & p2_, const float l2radius_ ) noexcept {
-
+void OutBox::initialize ( const Point & p0_, const Point & p1_, const Point & p2_, const float l2radius_ ) noexcept {
 	m_captured.clear ( );
-
 	// Counter-Clock-wise.
-
 	s0 = p0_.y * p2_.x - p0_.x * p2_.y, t0 = p0_.x * p1_.y - p0_.y * p1_.x;
-
 	s1 = p2_.y - p0_.y, t1 = p0_.y - p1_.y;
 	s2 = p0_.x - p2_.x, t2 = p1_.x - p0_.x;
-
 	a = -p1_.y * p2_.x + p0_.y * ( p2_.x - p1_.x ) + p0_.x * ( p1_.y - p2_.y ) + p1_.x * p2_.y;
-
 	xdist = std::uniform_real_distribution<float> ( min ( p0_.x, p1_.x, p2_.x ), max ( p0_.x, p1_.x, p2_.x ) );
 	ydist = std::uniform_real_distribution<float> ( min ( p0_.y, p1_.y, p2_.y ), max ( p0_.y, p1_.y, p2_.y ) );
-
 	m_l2radius = l2radius_ * 4;
 }
 
 Point OutBox::randomPoint ( ) const noexcept {
-
 	Point p;
-
 	while ( true ) {
-
 		do {
-
 			p.x = xdist ( g_rng ), p.y = ydist ( g_rng );
-
 		} while ( not ( isInside ( p ) ) );
-
 		bool is_close = false;
-
 		for ( const auto c : m_captured ) {
-
 			if ( isClose ( p, c ) ) {
-
 				is_close = true;
 			}
 		}
-
 		if ( not ( is_close ) ) {
-
 			break;
 		}
 	}
-
 	return p;
 }
 
 
-void App::initialise ( const std::int32_t no_stones_ ) {
-
-	m_state.initialise ( no_stones_ );
-
+void App::initialize ( const std::int32_t no_stones_ ) {
+	m_state.initialize ( no_stones_ );
 	const ResourceData resource_data ( no_stones_ );
-
 	// Setup parameters.
-
 	m_window_width = resource_data.m_xara_dim.x;
 	m_window_height = resource_data.m_xara_dim.y;
-
 	m_window_bounds = sf::FloatRect ( 0.0f, 0.0f, m_window_width, m_window_height );
 	m_drag_bounding_box = sf::FloatRect ( resource_data.m_margin, resource_data.m_margin, m_window_width - 2.0f * resource_data.m_margin, m_window_height - 2.0f * resource_data.m_margin );
-
 	// Create the m_window.
-
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8U;
-
 	m_window.create ( sf::VideoMode ( static_cast<std::uint32_t> ( m_window_width ), static_cast<std::uint32_t> ( m_window_height ) ), L"Oska", sf::Style::Close, settings );
 	m_window.setFramerateLimit ( 60U );
-
 	m_board_texture.create ( static_cast<std::uint32_t> ( m_window_width ), static_cast<std::uint32_t> ( m_window_height ) );
 	m_board_texture.setSmooth ( true );
-
 	// The board polygon.
-
 	m_board_polygon = std::vector < Point > {
-
 		Point ( resource_data.m_margin, resource_data.m_margin ),
 		Point ( 0.5f * resource_data.m_xara_dim.x - resource_data.m_xara_hex_dim.x, 0.5f * resource_data.m_xara_dim.y ),
 		Point ( resource_data.m_margin, resource_data.m_xara_dim.y - resource_data.m_margin ),
@@ -134,63 +97,46 @@ void App::initialise ( const std::int32_t no_stones_ ) {
 		Point ( resource_data.m_xara_dim.x - resource_data.m_margin, resource_data.m_margin ),
 		Point ( resource_data.m_margin, resource_data.m_margin )
 	};
-
 	// Set icon.
-
 	setIcon ( );
-
 	// Load fonts.
-
 	LoadFromResource ( m_font_regular, __REGULAR_FONT__ );
 	LoadFromResource ( m_font_bold, __BOLD_FONT__ );
 	LoadFromResource ( m_font_mono, __MONO_FONT__ );
 	LoadFromResource ( m_font_numbers, __NUMBERS_FONT__ );
-
 	// Create background sprite and stones.
-
 	LoadFromResource ( m_background_texture, resource_data.m_bg_png );
 	m_background_texture.setSmooth ( true );
 	m_background.setTexture ( m_background_texture );
-
 	LoadFromResource ( m_agent_stone_texture, resource_data.m_as_png );
 	m_agent_stone_texture.setSmooth ( true );
 	m_agent_stone.setTexture ( m_agent_stone_texture );
 	m_agent_stone.setOrigin ( m_agent_stone.getLocalBounds ( ).width / 2.0f, m_agent_stone.getLocalBounds ( ).height / 2.0f );
-
 	LoadFromResource ( m_human_stone_texture, resource_data.m_hs_png );
 	m_human_stone_texture.setSmooth ( true );
 	m_human_stone.setTexture ( m_human_stone_texture );
 	m_human_stone.setOrigin ( m_agent_stone.getOrigin ( ) );
-
 	LoadFromResource ( m_drag_shape_texture, resource_data.m_hs_png );
 	m_drag_shape_texture.setSmooth ( true );
 	m_drag_shape.setTexture ( m_drag_shape_texture );
 	m_drag_shape.setOrigin ( m_human_stone.getOrigin ( ) );
-
 	const float radius = m_drag_shape.getLocalBounds ( ).width / 2.0f;
-
 	m_drag_shape_l2radius = radius * radius;
-
-	m_agent_outbox.initialise (
-
+	m_agent_outbox.initialize (
 		Point ( 0.5f * resource_data.m_xara_dim.x - 2.75f * resource_data.m_xara_hex_dim.x, 0.5f * resource_data.m_xara_dim.y ),
 		Point ( resource_data.m_margin + radius, 0.75f * resource_data.m_xara_dim.y ),
 		Point ( resource_data.m_margin + radius, 0.25f * resource_data.m_xara_dim.y ),
 		m_drag_shape_l2radius
 	);
-
-	m_human_outbox.initialise (
-
+	m_human_outbox.initialize (
 		Point ( resource_data.m_xara_dim.x - resource_data.m_margin - radius, 0.25f * resource_data.m_xara_dim.y ),
 		Point ( resource_data.m_xara_dim.x - resource_data.m_margin - radius, 0.75f * resource_data.m_xara_dim.y ),
 		Point ( 0.5f * resource_data.m_xara_dim.x + 2.75f * resource_data.m_xara_hex_dim.x, 0.5f * resource_data.m_xara_dim.y ),
 		m_drag_shape_l2radius
 	);
-
-	m_agent_stone_mover.initialise ( m_state );
-
-	m_agent_stone_captor.initialise ( m_state, m_agent_outbox );
-	m_human_stone_captor.initialise ( m_state, m_human_outbox );
+	m_agent_stone_mover.initialize ( m_state );
+	m_agent_stone_captor.initialize ( m_state, m_agent_outbox );
+	m_human_stone_captor.initialize ( m_state, m_human_outbox );
 }
 
 

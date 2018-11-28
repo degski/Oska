@@ -100,7 +100,7 @@ namespace mcts {
     };
 
 
-    template < typename State >
+    template<typename State>
     struct ArcData { // 1 bytes.
 
         typedef State state_type;
@@ -169,14 +169,14 @@ namespace mcts {
     };
 
 
-    template < typename State >
+    template<typename State>
     struct NodeData { // 17 bytes.
 
         typedef State state_type;
         typedef typename State::Moves Moves;
         typedef typename State::Moves::value_type Move;
-        typedef mp::MemoryPool < Moves, 65536 > MovesPool;
-        typedef llvm::OwningPtr < MovesPool > MovesPoolPtr;
+        typedef mp::MemoryPool<Moves, 65536> MovesPool;
+        typedef llvm::OwningPtr<MovesPool> MovesPoolPtr;
 
         Moves * m_moves = nullptr;  // 8 bytes.
 

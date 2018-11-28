@@ -55,7 +55,7 @@ std::int32_t wmain ( ) {
 		// Create the app (contains the window).
 
 		std::unique_ptr<App> app_uptr = std::make_unique<App> ( );
-		app_uptr->initialise ( no_stones );
+		app_uptr->initialize ( no_stones );
 
 		// Setup window.
 

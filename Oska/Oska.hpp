@@ -26,19 +26,20 @@
 #include <cassert>
 #include <cstring>
 
-#include <algorithm>
 #include <array>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <numeric>
-#include <optional>
-#include <random>
-#include <utility>
 #include <vector>
+#include <iostream>
+#include <numeric>
+#include <utility>
+#include <memory>
+#include <random>
+#include <functional>
 
-template<typename Function>
-using function = std::function<Function>;
+template < typename Function >
+using function = std::function < Function >;
+
+#include <algorithm>
+#include <optional>
 
 using namespace std::placeholders;  // for _1, _2, _3.
 
@@ -47,8 +48,12 @@ using namespace std::placeholders;  // for _1, _2, _3.
 #include <spatial/idle_point_multimap.hpp>
 #include <spatial/neighbor_iterator.hpp>
 
-#include "vector2d.hpp"
+#include <cereal/cereal.hpp>
+#include <cereal/archives/binary.hpp>
+
 #include "multi_array.hpp"
+#include <integer_utils.hpp>
+#include "autotimer.hpp"
 
 #include "Typedefs.hpp"
 #include "Globals.hpp"
@@ -57,7 +62,7 @@ using namespace std::placeholders;  // for _1, _2, _3.
 #include "ResourceData.hpp"
 
 
-// ------------------------------------ OSKA -----------------------------------------
+// ------------------------------------ OSKA ---------------------------------------
 //
 // OSKA is a speedy game for 2 players which is deceptively simple, using the
 // Draughts (checkers) principle of diagonal movement and capture. BUT � keep well in
@@ -66,7 +71,7 @@ using namespace std::placeholders;  // for _1, _2, _3.
 // will be. The skill lies in when, or if, to capture, and when to force your
 // opponent to capture you.� You take a piece by jumping it, so this can only be
 // done forwards and so long as the space the other side of it is empty. You do not
-// HAVE to take as the rules state when, or if, to capture. The winner is the
+// HAVE to take as the rules state �when, or if, to capture�. The winner is the
 // first one to have ALL of their REMAINING pieces to the other side, so if all of
 // their pieces are taken except one and they get that one to the other side before
 // the other human gets all four of their pieces across, they win.
@@ -76,7 +81,7 @@ using namespace std::placeholders;  // for _1, _2, _3.
 // Now while the game is simple (once you�ve clarified the rules) and fast, there�s a
 // lot that could be said about the strategy. For starters you cannot afford to make
 // mistakes, I know this can be said for almost all games but one mistake in OSKA and
-// the other person most often enters a state where they can't be beaten because all
+// the other person most often enters a state where they can�t be beaten because all
 // series of moves that follow result in their victory!
 //
 // The key to the game, I believe, lies in forcing the other person to take you. You
@@ -156,7 +161,7 @@ struct Move { // 4
         std::uint32_t v;
     };
 
-    Move ( ) noexcept : v ( invalid.v )  { }
+    Move ( ) noexcept : v ( invalid.v ) { }
     Move ( Location && f_ ) noexcept : m_from ( std::move ( f_ ) ) { }
     Move ( const Location & f_, const Location & t_ ) noexcept : m_from ( f_ ), m_to ( t_ ) { }
     Move ( Location && f_, Location && t_ ) noexcept : m_from ( std::move ( f_ ) ), m_to ( std::move ( t_ ) ) { }
@@ -165,7 +170,7 @@ struct Move { // 4
 
     [[ maybe_unused ]] Move & operator = ( const Move & rhs_ ) noexcept {
         v = rhs_.v;
-        return * this;
+        return *this;
     }
 
     [[ nodiscard ]] bool operator == ( const Move & rhs_ ) const noexcept {
@@ -184,13 +189,14 @@ struct Move { // 4
     }
 
     [[ nodiscard ]] Location captured ( ) const noexcept {
-        return Location	( ( m_from.c + m_to.c ) / 2, ( m_from.r + m_to.r ) / 2 );
+        return Location ( ( m_from.c + m_to.c ) / 2, ( m_from.r + m_to.r ) / 2 );
     }
 };
 
 const Move Move::none = Move ( Location ( -1, -1 ), Location ( -1, -1 ) );
 const Move Move::root = Move ( Location ( -2, -2 ), Location ( -2, -2 ) );
 const Move Move::invalid;
+
 
 #define NO_COLS( S ) ( S )
 #define NO_ROWS( S ) ( 2 * ( ( S ) - 2 ) + 1 )
@@ -231,24 +237,23 @@ public:
 
 private:
 
-    static std::normal_distribution<float> m_disx, m_disy;
+    static std::normal_distribution < float > m_disx, m_disy;
 
 public:
 
-    Hexagon ( ) {
+    Hexagon ( ) noexcept {
     }
-
     Hexagon ( Point && c_, Point && o_ = Point ( m_disx ( g_rng ), m_disy ( g_rng ) ) ) noexcept :
         m_center ( std::move ( c_ ) ),
         m_offset ( std::move ( o_ ) ) {
     }
 
-    static void initialise ( const sf::Vector2f d_ ) noexcept { // To be called once for initialisation of static variables.
+    static void initialize ( const sf::Vector2f d_ ) noexcept { // To be called once for initialisation of static variables.
         m_hori = 0.5f * d_.x, m_vert = 0.25f * d_.y;
         m_2_vert = 2.0f * m_vert, m_2_vert_hori = 2.0f * m_vert * m_hori;
         m_center_l2radius = ( ( 2.0f / 3.0f ) * ( 2.0f / 3.0f ) ) * m_vert * m_vert;
-        m_disx = std::normal_distribution<float> ( 0.0f, 0.25f * std::sqrt ( d_.x ) );
-        m_disy = std::normal_distribution<float> ( 0.0f, 0.25f * std::sqrt ( d_.y ) );
+        m_disx = std::normal_distribution < float > ( 0.0f, 0.25f * std::sqrt ( d_.x ) );
+        m_disy = std::normal_distribution < float > ( 0.0f, 0.25f * std::sqrt ( d_.y ) );
     }
 
     [[ nodiscard ]] bool contains ( const Point & p_ ) const noexcept {
@@ -294,6 +299,15 @@ public:
     void setOffsetFromPoint ( const Point & p_ ) noexcept {
         m_offset = p_ - m_center;
     }
+
+private:
+
+    friend class cereal::access;
+
+    template<class Archive>
+    void serialize ( Archive & ar_ ) {
+        ar_ ( m_center, m_offset );
+    }
 };
 
 float Hexagon::m_hori;
@@ -309,22 +323,28 @@ std::normal_distribution<float> Hexagon::m_disy;
 using StoneID = boost::container::static_vector<std::int8_t, 8>;
 
 
-template < index_t S >
+template<index_t S>
 class OskaStateTemplate {
 
-    typedef Player Player;
-    typedef ZobristHash ZobristHash;
-    typedef Move Move;
-    typedef Moves<Move, 16> Moves;
+public:
 
-    typedef ma::Vector < Hexagon, NO_HEXAGONS ( S ) > Hexagons;
-    typedef ma::MatrixRM < index_t, OB_COLS ( S ), OB_ROWS ( S ) > LocationToID;
-    typedef ma::Vector < Location, NO_HEXAGONS ( S ) > IDToLocation;
-    typedef ma::MatrixRM < Player, OB_COLS ( S ), OB_ROWS ( S ) > Board;
-    typedef ma::Cube < ZobristHash, 2, OB_COLS ( S ), OB_ROWS ( S ) > ZobristHashKeys;
+    static constexpr index_t max_no_moves = 2 * S;
 
-    typedef std::array<float, 2> PointArray;
-    typedef spatial::idle_point_multimap < 2, PointArray, index_t > PointToID;
+    using Player = Player;
+    using ZobristHash = ZobristHash;
+    using Move = Move;
+    using Moves = Moves<Move, max_no_moves>;
+
+private:
+
+    using Hexagons = ma::Vector<Hexagon, NO_HEXAGONS ( S )>;
+    using LocationToID = ma::MatrixRM<index_t, OB_COLS ( S ), OB_ROWS ( S )>;
+    using IDToLocation = ma::Vector<Location, NO_HEXAGONS ( S )>;
+    using Board = ma::MatrixRM<Player, OB_COLS ( S ), OB_ROWS ( S )>;
+    using ZobristHashKeys = ma::Cube<ZobristHash, 2, OB_COLS ( S ), OB_ROWS ( S )>;
+
+    using PointArray = std::array<float, 2>;
+    using PointToID = spatial::idle_point_multimap<2, PointArray, index_t>;
 
     static Hexagons m_hexagons;
     static PointToID m_point_to_id;				// Lookup table from Point to Hexagon-id.
@@ -338,11 +358,11 @@ class OskaStateTemplate {
 
     index_t m_no_home_agent = 0, m_no_home_human = 0;
 
-    Player m_player = Player::Type::human, m_winner = Player::Type::vacant;
+    Player m_player_to_move = Player::random ( ), m_winner = Player::Type::invalid;
 
-    Move m_move;
+    Move m_last_move = Move::root;
 
-    bool is_once_initialised = false;
+    bool is_once_initialized = false;
 
     static ZobristHashKeys m_zobrist_keys;
     static const ZobristHash m_zobrist_player_key_values [ 3 ];
@@ -352,16 +372,13 @@ public:
 
     OskaStateTemplate ( ) noexcept {
     }
-
     OskaStateTemplate ( const OskaStateTemplate & s_ ) noexcept {
         std::memcpy ( this, & s_, sizeof ( OskaStateTemplate ) );
     }
 
-    // Initialise board and indices.
-
-    void once_initialise ( ) {
+    void once_initialize ( ) {
         ResourceData resource_data ( S );
-        Hexagon::initialise ( resource_data.m_xara_hex_dim );
+        Hexagon::initialize ( resource_data.m_xara_hex_dim );
         // Set all fields of boards to Player::Type::invalid.
         index_t r, c;
         for ( r = 0; r < OB_ROWS ( S ); ++r ) {
@@ -378,85 +395,58 @@ public:
         for ( r = 1; r < OB_ROWS ( S ) / 2; ++r, ++li, --ri ) {
             for ( c = li; c < ri; c += 2 ) {
                 m_hexagons.at ( id ) = std::move ( Hexagon ( Point ( c * 0.5f * resource_data.m_xara_hex_dim.x + resource_data.m_margin, y ) ) );
-
                 m_point_to_id.insert ( std::make_pair ( toArray ( m_hexagons.at ( id ).center ( ) ), id ) );
-
                 m_location_to_id.at ( c, r ) = id;
                 m_id_to_location.at ( id ) = std::move ( Location ( c, r ) );
-
                 m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == 1 ? Player::Type::agent : Player::Type::vacant;
-
-                m_zobrist_keys.at ( ( intptr_t ) Player::Type::agent, c, r ) = dist ( g_rng );
-                m_zobrist_keys.at ( ( intptr_t ) Player::Type::human, c, r ) = dist ( g_rng );
-
+                m_zobrist_keys.at ( 0, c, r ) = dist ( g_rng );
+                m_zobrist_keys.at ( 1, c, r ) = dist ( g_rng );
                 if ( r == 1 ) {
-
-                    m_zobrist_hash ^= m_zobrist_keys.at ( ( intptr_t ) Player::Type::agent, c, r );
+                    const Player player = Player::Type::agent;
+                    m_zobrist_hash ^= m_zobrist_keys.at ( player.as_01index ( ), c, r );
                     m_agent_stone_id.emplace_back ( id );
                 }
-
                 ++id;
             }
-
             y += 0.75f * resource_data.m_xara_hex_dim.y;
         }
-
         // Bottom of the board, r, li and ri "fall through" from top of board.
-
         m_human_stone_id.reserve ( S );
-
         for ( ; r < OB_ROWS ( S ) - 1; ++r, --li, ++ri ) {
-
             for ( c = li; c < ri; c += 2 ) {
-
                 m_hexagons.at ( id ) = std::move ( Hexagon ( Point ( c * 0.5f * resource_data.m_xara_hex_dim.x + resource_data.m_margin, y ) ) );
-
                 m_point_to_id.insert ( std::make_pair ( toArray ( m_hexagons.at ( id ).center ( ) ), id ) );
-
                 m_location_to_id.at ( c, r ) = id;
                 m_id_to_location.at ( id ) = std::move ( Location ( c, r ) );
-
                 m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == OB_HOME_ROW ( S ) ? Player::Type::human : Player::Type::vacant;
-
-                m_zobrist_keys.at ( ( intptr_t ) Player::Type::agent, c, r ) = dist ( g_rng );
-                m_zobrist_keys.at ( ( intptr_t ) Player::Type::human, c, r ) = dist ( g_rng );
-
+                m_zobrist_keys.at ( 0, c, r ) = dist ( g_rng );
+                m_zobrist_keys.at ( 1, c, r ) = dist ( g_rng );
                 if ( r == OB_HOME_ROW ( S ) ) {
-
-                    m_zobrist_hash ^= m_zobrist_keys.at ( ( intptr_t ) Player::Type::human, c, r );
+                    const Player player = Player::Type::human;
+                    m_zobrist_hash ^= m_zobrist_keys.at ( player.as_01index ( ), c, r );
                     m_human_stone_id.emplace_back ( id );
                 }
-
                 ++id;
             }
-
             y += 0.75f * resource_data.m_xara_hex_dim.y;
         }
-
         m_point_to_id.rebalance ( );
     }
 
-    void initialise ( ) {
-
-        if ( not ( is_once_initialised ) ) {
-            is_once_initialised = true;
-            return once_initialise ( );
+    void initialize ( ) {
+        if ( not ( is_once_initialized ) ) {
+            is_once_initialized = true;
+            return once_initialize ( );
         }
-
         index_t r, c;
-
         for ( r = 0; r < OB_ROWS ( S ); ++r ) {
             for ( c = 0; c < OB_COLS ( S ); ++c ) {
                 m_human_board.at ( c, r ) = m_agent_board.at ( c, r ) = Player::Type::invalid;
             }
         }
-
         // Top of the board.
-
         m_agent_stone_id.clear ( );
-
         index_t li = 1, ri = OB_COLS ( S ) - 1, id = 0;
-
         for ( r = 1; r < OB_ROWS ( S ) / 2; ++r, ++li, --ri ) {
             for ( c = li; c < ri; c += 2 ) {
                 m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == 1 ? Player::Type::agent : Player::Type::vacant;
@@ -466,37 +456,25 @@ public:
                 ++id;
             }
         }
-
         // Bottom of the board, r, li and ri "fall through" from top of board.
-
         m_human_stone_id.clear ( );
-
         for ( ; r < OB_ROWS ( S ) - 1; ++r, --li, ++ri ) {
-
             for ( c = li; c < ri; c += 2 ) {
-
                 m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == OB_HOME_ROW ( S ) ? Player::Type::human : Player::Type::vacant;
-
                 if ( r == OB_HOME_ROW ( S ) ) {
-
                     m_human_stone_id.emplace_back ( id );
                 }
-
                 ++id;
             }
         }
-
         m_no_home_agent = 0;
         m_no_home_human = 0;
-
-        m_player = m_winner == Player::Type::vacant ? Player::random ( ) : m_winner;
-        m_winner = Player::Type::vacant;
-
-        m_move = Move::root;
+        m_player_to_move = Player::random ( );
+        m_winner = Player::Type::invalid;
+        m_last_move = Move::root;
     }
 
     [[ nodiscard ]] bool isValidID ( const std::int8_t id_ ) const noexcept {
-
         return id_ >= 0 and id_ < NO_HEXAGONS ( S );
     }
 
@@ -505,7 +483,7 @@ public:
     }
 
     [[ nodiscard ]] sf::Vector2f fromArray ( const PointArray & p_ ) const noexcept {
-        return * reinterpret_cast < const sf::Vector2f * > ( & p_ );
+        return * reinterpret_cast<const sf::Vector2f * > ( & p_ );
     }
 
     [[ nodiscard ]] index_t pointToHexID ( const Point & target_ ) const noexcept {
@@ -516,7 +494,7 @@ public:
         return m_id_to_location.at ( pointToHexID ( p_ ) );
     }
 
-    index_t pointToHumanID ( const Point & p_ ) const noexcept {
+    [[ nodiscard ]] index_t pointToHumanID ( const Point & p_ ) const noexcept {
         const index_t id = pointToHexID ( p_ );
         if ( std::find ( std::begin ( m_human_stone_id ), std::end ( m_human_stone_id ), id ) == std::end ( m_human_stone_id ) ) {
             return -1;
@@ -550,20 +528,24 @@ public:
     }
 
     [[ nodiscard ]] bool haveRemainingHome ( const Player player_ ) const noexcept {
-        return player_ == Player::Type::agent ? m_no_home_agent and m_no_home_agent == m_agent_stone_id.size ( ) : m_no_home_human and m_no_home_human == m_human_stone_id.size ( );
+        return player_ == Player::Type::agent ? ( m_no_home_agent and ( m_no_home_agent == m_agent_stone_id.size ( ) ) ) : ( m_no_home_human and ( m_no_home_human == m_human_stone_id.size ( ) ) );
     }
 
     [[ nodiscard ]] ZobristHash zobrist ( ) const noexcept {
-        return m_zobrist_hash ^ m_zobrist_player_keys [ m_player.as_index ( ) ]; // m_player is opposite player, doesn't matter for the ZH.
+        return m_zobrist_hash ^ m_zobrist_player_keys [ m_player_to_move.as_index ( ) ]; // m_player_to_move is opposite player, doesn't matter for the ZH.
     }
 
-    [[ nodiscard ]] Player player ( ) const noexcept { // player to move
-        return m_player;
+    [[ nodiscard ]] Player playerToMove ( ) const noexcept {
+        return m_player_to_move;
+    }
+
+    [[ nodiscard ]] Player playerJustMoved ( ) const noexcept {
+        return m_player_to_move.opponent ( );
     }
 
 private:
 
-    typedef ma::MatrixRM<bool, NO_HEXAGONS ( S ), NO_HEXAGONS ( S )> MoveValidator;
+    using MoveValidator = ma::MatrixRM<bool, NO_HEXAGONS ( S ), NO_HEXAGONS ( S )>;
 
     [[ nodiscard ]] MoveValidator buildMoveValidator ( ) const noexcept {
         MoveValidator validator;
@@ -592,7 +574,7 @@ public:
 
     [[ nodiscard ]] Move const randomMove ( ) const noexcept {
         Move move;
-        if ( m_player == Player::Type::agent ) {
+        if ( m_player_to_move == Player::Type::agent ) {
             StoneID ids ( m_agent_stone_id );
             while ( ids.size ( ) ) {
                 const index_t i = std::uniform_int_distribution<index_t> ( 0, ( index_t ) ids.size ( ) - 1 ) ( g_rng );
@@ -635,7 +617,6 @@ public:
                         return move;
                     }
                 }
-
                 else {
                     move = rightMove ( m_human_board, loc.c, loc.r );
                     if ( move not_eq Move::invalid ) {
@@ -695,7 +676,7 @@ private:
             ( *std::find ( std::begin ( m_human_stone_id ), std::end ( m_human_stone_id ), m_location_to_id.at_r ( move_.m_from.c, move_.m_from.r ) ) ) = m_location_to_id.at_r ( move_.m_to.c, move_.m_to.r );
             m_zobrist_hash ^= m_zobrist_keys.at ( 1, move_.m_from.c, move_.m_from.r );
             m_zobrist_hash ^= m_zobrist_keys.at ( 1, move_.m_to.c, move_.m_to.r );
-            m_no_home_agent += move_.m_to.r == OB_HOME_ROW ( S );
+            m_no_home_human += move_.m_to.r == OB_HOME_ROW ( S );
         }
     }
 
@@ -725,7 +706,7 @@ private:
             m_human_board.at ( move_.m_from.c, move_.m_from.r ) = m_agent_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::Type::vacant;
             m_human_board.at ( move_.m_to.c, move_.m_to.r ) = m_agent_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::Type::human;
             ( *std::find ( std::begin ( m_human_stone_id ), std::end ( m_human_stone_id ), m_location_to_id.at_r ( move_.m_from.c, move_.m_from.r ) ) ) = m_location_to_id.at_r ( move_.m_to.c, move_.m_to.r );
-            m_no_home_agent += move_.m_to.r == OB_HOME_ROW ( S );
+            m_no_home_human += move_.m_to.r == OB_HOME_ROW ( S );
         }
     }
 
@@ -742,42 +723,35 @@ private:
     }
 
 
-    bool checkMove ( const Player p_, const Move & move_ ) const noexcept {
-        return m_player == Player::Type::agent ? not ( m_location_to_id.at ( move_.m_from.c, move_.m_from.r ) == -1 or m_location_to_id.at ( move_.m_to.c, move_.m_to.r ) == -1 ) : not ( m_location_to_id.at_r ( move_.m_from.c, move_.m_from.r ) == -1 or m_location_to_id.at_r ( move_.m_to.c, move_.m_to.r ) == -1 );
-    }
-
 public:
 
     void move_hash ( const Move & move_ ) noexcept {
-        m_move = move_;
-        assert ( checkMove ( m_player, move_ ) );
-        moveStoneHash ( m_player, move_ );
+        m_last_move = move_;
+        moveStoneHash ( m_player_to_move, move_ );
         if ( move_.isCapture ( ) ) {
-            captureStoneHash ( m_player, move_ );
+            captureStoneHash ( m_player_to_move, move_ );
         }
-        m_player.next ( );
+        m_player_to_move.next ( );
     }
 
     void move_hash_winner ( const Move & move_ ) noexcept {
-        m_move = move_;
-        assert ( checkMove ( m_player, move_ ) );
-        moveStoneHash ( m_player, move_ );
+        m_last_move = move_;
+        moveStoneHash ( m_player_to_move, move_ );
         if ( move_.isCapture ( ) ) {
-            captureStoneHash ( m_player, move_ );
+            captureStoneHash ( m_player_to_move, move_ );
         }
         winner ( );
-        m_player.next ( );
+        m_player_to_move.next ( );
     }
 
     void move_winner ( const Move & move_ ) noexcept {
-        m_move = move_;
-        assert ( checkMove ( m_player, move_ ) );
-        moveStone ( m_player, move_ );
+        m_last_move = move_;
+        moveStone ( m_player_to_move, move_ );
         if ( move_.isCapture ( ) ) {
-            captureStone ( m_player, move_ );
+            captureStone ( m_player_to_move, move_ );
         }
         winner ( );
-        m_player.next ( );
+        m_player_to_move.next ( );
     }
 
     [[ maybe_unused ]] Move const doMove ( const Move & move_ ) noexcept {
@@ -785,10 +759,11 @@ public:
         return move_;
     }
 
+
     // Search forward (from Player's perspective), left and right,
     // returning a potential move, either move or capture.
 
-    [[ nodiscard ]] Move leftMove ( const Board & b_, index_t c_, index_t r_ ) const noexcept { // Location is in players's perspective.
+    [ [ nodiscard ] ] Move leftMove ( const Board & b_, index_t c_, index_t r_ ) const noexcept { // Location is in players's perspective.
         Move move ( Location ( c_, r_ ) );
         ++c_; ++r_;
         const Player player = b_.at ( c_, r_ );
@@ -831,7 +806,7 @@ public:
         }
         moves_->clear ( );
         Move move;
-        if ( m_player == Player::Type::agent ) {
+        if ( m_player_to_move == Player::Type::agent ) {
             for ( const index_t s : m_agent_stone_id ) {
                 const Location l = m_id_to_location.at ( s );
                 move = leftMove ( m_agent_board, l.c, l.r );
@@ -873,10 +848,10 @@ public:
         if ( player_ == Player::Type::agent ) {
             for ( const index_t s : m_agent_stone_id ) {
                 const Location l = m_id_to_location.at ( s );
-                if ( leftMove ( m_agent_board, l.c, l.r ) != Move::invalid ) {
+                if ( leftMove ( m_agent_board, l.c, l.r ) not_eq Move::invalid ) {
                     return true;
                 }
-                if ( rightMove ( m_agent_board, l.c, l.r ) != Move::invalid ) {
+                if ( rightMove ( m_agent_board, l.c, l.r ) not_eq Move::invalid ) {
                     return true;
                 }
             }
@@ -884,15 +859,14 @@ public:
         else {
             for ( const index_t s : m_human_stone_id ) {
                 const Location l = m_id_to_location.at_r ( s );
-                if ( leftMove ( m_human_board, l.c, l.r ) != Move::invalid ) {
+                if ( leftMove ( m_human_board, l.c, l.r ) not_eq Move::invalid ) {
                     return true;
                 }
-                if ( rightMove ( m_human_board, l.c, l.r ) != Move::invalid ) {
+                if ( rightMove ( m_human_board, l.c, l.r ) not_eq Move::invalid ) {
                     return true;
                 }
             }
         }
-
         return false;
     }
 
@@ -900,33 +874,54 @@ public:
         return not ( hasMoves ( player_ ) );
     }
 
-    [[ nodiscard ]] std::optional<Player> ended ( ) const noexcept {
-        // Game ends, when:        //
-        // 1. m_player_that_moved moved all his stones in the end row;
-        // 2. player_to_move cannot move (this includes: player_to_move has no stones left);
-        return m_winner.occupied ( ) ? std::optional<Player> ( m_winner ) : std::optional<Player> ( );
+    [[ nodiscard ]] Player playerMostHomeStones ( ) const noexcept {
+        if ( m_no_home_agent > m_no_home_human ) return Player::Type::agent;
+        if ( m_no_home_agent < m_no_home_human ) return Player::Type::human;
+        return Player::Type::vacant;
     }
 
 
-    void winner ( ) noexcept { // Before the player swap, but after m_player made his move.
-        if ( haveRemainingHome ( m_player ) or hasNoMoves ( m_player.opponent ( ) ) ) {
-            m_winner = m_player;
+    [[ nodiscard ]] std::optional<Player> ended ( ) const noexcept {
+        // Game ends, when:
+        //
+        // 1. m_player_that_moved moved all his stones in the end row;
+        // 2. player_to_move cannot move (this includes: player_to_move has no stones left);
+        return m_winner == Player::Type::invalid ? std::optional<Player> ( ) : std::optional<Player> ( m_winner );
+    }
+
+
+    void winner ( ) noexcept { // Before the player swap, but after m_player_to_move made his move.
+        if ( haveRemainingHome ( m_player_to_move ) ) {
+            m_winner = haveRemainingHome ( m_player_to_move.opponent ( ) ) ? playerMostHomeStones ( ) : m_player_to_move;
+        }
+        else if ( notHaveStones ( m_player_to_move.opponent ( ) ) ) {
+            m_winner = m_player_to_move;
+        }
+        else if ( hasNoMoves ( m_player_to_move.opponent ( ) ) ) {
+            m_winner = m_player_to_move.opponent ( );
         }
     }
 
 
-    [[ nodiscard ]] std::int32_t result ( const Player p_ ) const noexcept {
+
+    [[ nodiscard ]] float result ( const Player player_just_moved_ ) const noexcept {
         // Determine result: last player of path is the player to move.
-        return m_winner.vacant ( ) ? 0 : ( m_winner == p_ ? 1 : -1 );
+        // return m_winner.vacant ( ) ? 0.5f : ( m_winner == player_just_moved_ ? 1.0f : 0.0f ); // Score.
+        return m_winner.vacant ( ) ? 0.0f : ( m_winner == player_just_moved_ ? 1.0f : -1.0f );
     }
 
 
-    [[ nodiscard ]] Player getPlayerThatMoved ( ) const noexcept {
-        return m_player.opponent ( );
+    [[ nodiscard ]] bool terminal ( ) const noexcept {
+        return m_winner.occupied ( ); // or m_no_moves == NumRows * NumCols;
     }
+
+    [[ nodiscard ]] bool nonterminal ( ) const noexcept {
+        return m_winner.vacant ( ); // and m_no_moves < NumRows * NumCols;
+    }
+
 
     [[ nodiscard ]] Move lastMove ( ) const noexcept {
-        return m_move;
+        return m_last_move;
     }
 
     void printRaw ( const Board & b_ ) const noexcept {
@@ -935,13 +930,14 @@ public:
         for ( index_t r = 0; r < OB_ROWS ( S ); ++r ) {
             putchar ( ' ' );
             for ( index_t c = 0; c < OB_COLS ( S ); ++c ) {
-                switch ( b_.at ( c, r ) ) {
-                    case Player::Type::vacant: putchar ( '*' ); break;
-                    case Player::Type::human: putchar ( 'H' ); break;
-                    case Player::Type::agent: putchar ( 'A' ); break;
-                    case Player::Type::invalid: putchar ( ' ' ); break;
-                    default: putchar ( '?' );
+                switch ( b_.at ( c, r ).as_index ( ) ) {
+                    case ( index_t ) Player::Type::invalid: putchar ( ' ' ); break;
+                    case ( index_t ) Player::Type::agent  : putchar ( 'A' ); break;
+                    case ( index_t ) Player::Type::vacant : putchar ( '*' ); break;
+                    case ( index_t ) Player::Type::human  : putchar ( 'H' ); break;
+                    NO_DEFAULT_CASE;
                 }
+
                 if ( c < OB_COLS ( S ) ) {
                     putchar ( ' ' );
                 }
@@ -949,39 +945,47 @@ public:
             putchar ( '\n' );
         }
         putchar ( '\n' );
-        std::cout << "Agent: has " << m_agent_stone_id.size ( ) << " stones,  " << m_no_home_agent << " stones home\n";
-        std::cout << "Human: has " << m_human_stone_id.size ( ) << " stones,  " << m_no_home_human << " stones home\n\n";
+        std::cout << " Agent: has " << m_agent_stone_id.size ( ) << " stones (" << m_no_home_agent << " stone(s) home)\n";
+        std::cout << " Human: has " << m_human_stone_id.size ( ) << " stones (" << m_no_home_human << " stone(s) home)\n\n";
     }
 
     void print ( ) const noexcept {
         printRaw ( m_agent_board );
     }
+
+private:
+
+    friend class cereal::access;
+
+    template < class Archive >
+    void serialize ( Archive & ar_ ) { ar_ ( * this ); }
 };
 
 template <index_t S>
-typename OskaStateTemplate < S >::Hexagons OskaStateTemplate < S >::m_hexagons;
+typename OskaStateTemplate<S>::Hexagons OskaStateTemplate<S>::m_hexagons;
 template <index_t S>
-typename OskaStateTemplate < S >::PointToID OskaStateTemplate < S >::m_point_to_id;
+typename OskaStateTemplate<S>::PointToID OskaStateTemplate<S>::m_point_to_id;
 template <index_t S>
-typename OskaStateTemplate < S >::LocationToID OskaStateTemplate < S >::m_location_to_id;
+typename OskaStateTemplate<S>::LocationToID OskaStateTemplate<S>::m_location_to_id;
 template <index_t S>
-typename OskaStateTemplate < S >::IDToLocation OskaStateTemplate < S >::m_id_to_location;
+typename OskaStateTemplate<S>::IDToLocation OskaStateTemplate<S>::m_id_to_location;
 template <index_t S>
-typename OskaStateTemplate < S >::ZobristHashKeys OskaStateTemplate < S >::m_zobrist_keys;
+typename OskaStateTemplate<S>::ZobristHashKeys OskaStateTemplate<S>::m_zobrist_keys;
 template <index_t S>
-const typename OskaStateTemplate < S >::ZobristHash OskaStateTemplate < S >::m_zobrist_player_key_values [ 3 ] {
+const typename OskaStateTemplate<S>::ZobristHash OskaStateTemplate<S>::m_zobrist_player_key_values [ 3 ] {
     0x41fec34015a1bef2ull, 0x8b80677c9c144514ull, 0xf6242292160d5bb7ull
 };
 template <index_t S>
-const typename OskaStateTemplate < S >::ZobristHash * OskaStateTemplate < S >::m_zobrist_player_keys {
+const typename OskaStateTemplate<S>::ZobristHash * OskaStateTemplate<S>::m_zobrist_player_keys {
     m_zobrist_player_key_values + 1
 };
 
 
+#if 1
 
-#define BIND( S ) case S: m_state_##S = new OskaStateTemplate < S > ( ); bind < S > ( m_state_##S ); break;
-#define BIND_COPY_FROM( S, OS ) case S: m_state_##S = new OskaStateTemplate < S > ( * OS.m_state_##S ); bind < S > ( m_state_##S ); break;
-#define BIND_MOVE_FROM( S, OS ) case S: std::swap ( m_no_stones, OS.m_no_stones ); std::swap ( m_state_##S, OS.m_state_##S ); bind < S > ( m_state_##S ); break;
+#define BIND( S ) case S: m_state_##S = new OskaStateTemplate<S> ( ); bind<S> ( m_state_##S ); break;
+#define BIND_COPY_FROM( S, OS ) case S: m_state_##S = new OskaStateTemplate<S> ( * OS.m_state_##S ); bind<S> ( m_state_##S ); break;
+#define BIND_MOVE_FROM( S, OS ) case S: std::swap ( m_no_stones, OS.m_no_stones ); std::swap ( m_state_##S, OS.m_state_##S ); bind<S> ( m_state_##S ); break;
 #define DESTROY( S ) case S: delete m_state_##S; break;
 
 namespace os {
@@ -992,25 +996,27 @@ namespace os {
 
     public:
 
-        typedef Move Move;
-        typedef Moves < Move, 16 > Moves;
-        typedef Player Player;
+        using Move = Move;
+        template<std::size_t S>
+        using Moves = typename OskaStateTemplate<S>::Moves;
+        using Player = Player;
 
         static constexpr index_t max_no_moves = 16;
 
         index_t m_no_stones = 0;
 
-        OskaState ( ) noexcept { }
+        OskaState ( ) noexcept {
+        }
 
     private:
 
-        OskaStateTemplate < 4 > * m_state_4 = nullptr;
-        OskaStateTemplate < 5 > * m_state_5 = nullptr;
-        OskaStateTemplate < 6 > * m_state_6 = nullptr;
-        OskaStateTemplate < 7 > * m_state_7 = nullptr;
-        OskaStateTemplate < 8 > * m_state_8 = nullptr;
+        OskaStateTemplate<4> * m_state_4 = nullptr;
+        OskaStateTemplate<5> * m_state_5 = nullptr;
+        OskaStateTemplate<6> * m_state_6 = nullptr;
+        OskaStateTemplate<7> * m_state_7 = nullptr;
+        OskaStateTemplate<8> * m_state_8 = nullptr;
 
-        function < void ( ) > m_initialise;
+        function < void ( ) > m_initialize;
         function < Location ( const Location & ) > m_other;
         function < bool ( const std::int8_t ) > m_is_valid_id;
         function < index_t ( const Point & ) > m_point_to_human_id;
@@ -1022,20 +1028,21 @@ namespace os {
         function < Move const ( const index_t, const index_t ) > m_human_move;
         function < Move ( ) > m_last_move;
         function < ZobristHash ( ) > m_zobrist;
-        function < Player ( ) > m_player;
-        function < bool ( Moves * ) > m_moves;
+        function < Player ( ) > m_player_to_move;
+        function < bool ( void * ) > m_moves;
         function < void ( const Move & ) > m_move_hash;
         function < void ( const Move & ) > m_move_hash_winner;
         function < void ( ) > m_simulate;
-        function < std::int32_t ( const Player ) > m_result;
-        function < std::optional<Player> ( )> m_ended;
-        function< Move const ( const Move & ) > m_do_move;
-        function< Move const ( ) > m_random_move;
+        function < float ( const Player ) > m_result;
+        function < std::optional<Player> ( ) > m_ended;
+        function < void ( ) > m_print;
+        function < Move const ( const Move & ) > m_do_move;
+        function < Move const ( ) > m_random_move;
 
         template<index_t S>
         void bind ( OskaStateTemplate<S> * m_state_ ) {
 
-            m_initialise = std::bind ( &OskaStateTemplate<S>::initialise, m_state_ );
+            m_initialize = std::bind ( &OskaStateTemplate<S>::initialize, m_state_ );
             m_other = std::bind ( &OskaStateTemplate<S>::other, m_state_, _1 );
             m_is_valid_id = std::bind ( &OskaStateTemplate<S>::isValidID, m_state_, _1 );
             m_point_to_human_id = std::bind ( &OskaStateTemplate<S>::pointToHumanID, m_state_, _1 );
@@ -1047,24 +1054,26 @@ namespace os {
             m_human_move = std::bind ( &OskaStateTemplate<S>::humanMove, m_state_, _1, _2 );
             m_last_move = std::bind ( &OskaStateTemplate<S>::lastMove, m_state_ );
             m_zobrist = std::bind ( &OskaStateTemplate<S>::zobrist, m_state_ );
-            m_player = std::bind ( &OskaStateTemplate<S>::player, m_state_ );
-            m_moves = std::bind ( &OskaStateTemplate<S>::moves, m_state_, _1 );
+            m_player_to_move = std::bind ( &OskaStateTemplate<S>::playerToMove, m_state_ );
+            m_moves = ( bool ( * ) ( void * ) ) std::bind ( &OskaStateTemplate<S>::moves, m_state_, _1 );
             m_move_hash = std::bind ( &OskaStateTemplate<S>::move_hash, m_state_, _1 );
             m_move_hash_winner = std::bind ( &OskaStateTemplate<S>::move_hash_winner, m_state_, _1 );
             m_simulate = std::bind ( &OskaStateTemplate<S>::simulate, m_state_ );
             m_result = std::bind ( &OskaStateTemplate<S>::result, m_state_, _1 );
             m_ended = std::bind ( &OskaStateTemplate<S>::ended, m_state_ );
+            m_print = std::bind ( &OskaStateTemplate<S>::print, m_state_ );
             m_do_move = std::bind ( &OskaStateTemplate<S>::doMove, m_state_, _1 );
             m_random_move = std::bind ( &OskaStateTemplate<S>::randomMove, m_state_ );
         }
 
         void destroy ( ) noexcept {
             switch ( m_no_stones ) {
-                DESTROY ( 4 )
-                DESTROY ( 5 )
-                DESTROY ( 6 )
-                DESTROY ( 7 )
-                DESTROY ( 8 )
+                DESTROY ( 4 );
+                DESTROY ( 5 );
+                DESTROY ( 6 );
+                DESTROY ( 7 );
+                DESTROY ( 8 );
+                NO_DEFAULT_CASE;
             }
         }
 
@@ -1073,22 +1082,24 @@ namespace os {
         OskaState ( const OskaState & s_ ) noexcept {
             m_no_stones = s_.m_no_stones;
             switch ( m_no_stones ) {
-                BIND_COPY_FROM ( 4, s_ )
-                BIND_COPY_FROM ( 5, s_ )
-                BIND_COPY_FROM ( 6, s_ )
-                BIND_COPY_FROM ( 7, s_ )
-                BIND_COPY_FROM ( 8, s_ )
+                BIND_COPY_FROM ( 4, s_ );
+                BIND_COPY_FROM ( 5, s_ );
+                BIND_COPY_FROM ( 6, s_ );
+                BIND_COPY_FROM ( 7, s_ );
+                BIND_COPY_FROM ( 8, s_ );
+                NO_DEFAULT_CASE;
             }
         }
 
         OskaState ( OskaState && s_ ) noexcept {
             assert ( m_no_stones == s_.m_no_stones );
             switch ( m_no_stones ) {
-                BIND_MOVE_FROM ( 4, s_ )
-                BIND_MOVE_FROM ( 5, s_ )
-                BIND_MOVE_FROM ( 6, s_ )
-                BIND_MOVE_FROM ( 7, s_ )
-                BIND_MOVE_FROM ( 8, s_ )
+                BIND_MOVE_FROM ( 4, s_ );
+                BIND_MOVE_FROM ( 5, s_ );
+                BIND_MOVE_FROM ( 6, s_ );
+                BIND_MOVE_FROM ( 7, s_ );
+                BIND_MOVE_FROM ( 8, s_ );
+                NO_DEFAULT_CASE;
             }
         }
 
@@ -1096,24 +1107,25 @@ namespace os {
             destroy ( );
         }
 
-        void initialise ( const index_t no_stones_ ) {
+        void initialize ( const index_t no_stones_ ) {
             destroy ( );
             m_no_stones = no_stones_;
             switch ( m_no_stones ) {
-                BIND ( 4 )
-                BIND ( 5 )
-                BIND ( 6 )
-                BIND ( 7 )
-                BIND ( 8 )
+                BIND ( 4 );
+                BIND ( 5 );
+                BIND ( 6 );
+                BIND ( 7 );
+                BIND ( 8 );
+                NO_DEFAULT_CASE;
             }
-            m_initialise ( );
+            m_initialize ( );
         }
 
-        void restart ( ) const noexcept { m_initialise ( ); }
+        void initialize ( ) const noexcept { m_initialize ( ); }
         [[ nodiscard ]] Location other ( const Location & l_ ) const noexcept { return m_other ( l_ ); }
         [[ nodiscard ]] bool isValidID ( const std::int8_t id_ ) const noexcept { return m_is_valid_id ( id_ ); }
         [[ nodiscard ]] index_t pointToHumanID ( const Point & p_ ) const noexcept { return m_point_to_human_id ( p_ ); }
-        [[ nodiscard ]] index_t pointToHexID ( const Point & p_ ) const noexcept { return m_point_to_hex_id ( p_ ); }
+        [[ nodiscard ]] index_t pointToHexID ( const  Point & p_ ) const noexcept { return m_point_to_hex_id ( p_ ); }
         [[ nodiscard ]] Hexagon & getHexRefFromID ( const index_t i_ ) noexcept { return m_get_hex_ref_from_id ( i_ ); }
         [[ nodiscard ]] index_t getIdFromLocation ( const Location & l_ ) const noexcept { return m_get_id_from_location ( l_ ); }
         [[ nodiscard ]] StoneID & getAgentStoneIDs ( ) noexcept { return m_get_agent_stone_id ( ); }
@@ -1121,15 +1133,19 @@ namespace os {
         [[ nodiscard ]] Move const humanMove ( const index_t f_, const index_t t_ ) const noexcept { return m_human_move ( f_, t_ ); }
         [[ nodiscard ]] Move lastMove ( ) const noexcept { return m_last_move ( ); }
         [[ nodiscard ]] ZobristHash zobrist ( ) const noexcept { return m_zobrist ( ); }
-        [[ nodiscard ]] Player playerToMove ( ) const noexcept { return m_player ( ); }
-        [[ nodiscard ]] Player playerJustMoved ( ) const noexcept { return m_player ( ).opponent ( ); }
-        [[ nodiscard ]] bool moves ( Moves * moves_ ) const noexcept { return m_moves ( moves_ ); }
+        [[ nodiscard ]] Player playerToMove ( ) const noexcept { return m_player_to_move ( ); }
+        [[ nodiscard ]] Player playerJustMoved ( ) const noexcept { return m_player_to_move ( ).opponent ( ); }
+        template<typename M>
+        [[ nodiscard ]] bool moves ( M * moves_ ) const noexcept { return m_moves ( moves_ ); }
         void move_hash ( const Move & move_ ) noexcept { return m_move_hash ( move_ ); }
         void move_hash_winner ( const Move & move_ ) noexcept { return m_move_hash_winner ( move_ ); }
         void simulate ( ) noexcept { m_simulate ( ); }
-        [[ nodiscard ]] std::int32_t result ( const Player player_ ) const noexcept { return m_result ( player_ ); }
+        [[ nodiscard ]] float result ( const Player player_ ) const noexcept { return m_result ( player_ ); }
         [[ nodiscard ]] std::optional<Player> ended ( ) const noexcept { return m_ended ( ); }
+        void print ( ) const noexcept { return m_print ( ); }
         [[ maybe_unused ]] Move const doMove ( const Move & move_ ) noexcept { return m_do_move ( move_ ); }
         [[ nodiscard ]] Move const randomMove ( ) noexcept { return m_random_move ( ); }
     };
 }
+
+#endif

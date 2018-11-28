@@ -33,9 +33,10 @@
     <ClInclude Include="Globals.hpp" />
     <ClInclude Include="Mcts.hpp" />
     <ClInclude Include="memorypool.hpp" />
-    <ClInclude Include="moves.hpp" />
+    <ClInclude Include="Moves.hpp" />
     <ClInclude Include="multi_array.hpp" />
     <ClInclude Include="Oska.hpp" />
+    <ClInclude Include="Oska0.hpp" />
     <ClInclude Include="owningptr.hpp" />
     <ClInclude Include="player.hpp" />
     <ClInclude Include="ResourceData.hpp" />
