@@ -331,14 +331,14 @@ class OskaStateTemplate {
     static LocationToID m_location_to_id;		// Lookup table from Location to Hexagon-id.
     static IDToLocation m_id_to_location;		// Lookup table from Hexagon-id to Location.
 
-    ZobristHash m_zobrist_hash = m_zobrist_player_keys [ ( index_t ) Player::type::vacant ]; // Hash of the current m_board.
+    ZobristHash m_zobrist_hash = m_zobrist_player_keys [ ( index_t ) Player::Type::vacant ]; // Hash of the current m_board.
 
     Board m_agent_board, m_human_board;			// Board from agent's and human's perspective, respectively.
     StoneID m_agent_stone_id, m_human_stone_id; // Stones from agent's perspective.
 
     index_t m_no_home_agent = 0, m_no_home_human = 0;
 
-    Player m_player = Player::type::human, m_winner = Player::type::vacant;
+    Player m_player = Player::Type::human, m_winner = Player::Type::vacant;
 
     Move m_move;
 
@@ -362,12 +362,12 @@ public:
     void once_initialise ( ) {
         ResourceData resource_data ( S );
         Hexagon::initialise ( resource_data.m_xara_hex_dim );
-        // Set all fields of boards to Player::type::invalid.
+        // Set all fields of boards to Player::Type::invalid.
         index_t r, c;
         for ( r = 0; r < OB_ROWS ( S ); ++r ) {
             for ( c = 0; c < OB_COLS ( S ); ++c ) {
                 m_location_to_id.at ( c, r ) = -1;
-                m_human_board.at ( c, r ) = m_agent_board.at ( c, r ) = Player::type::invalid;
+                m_human_board.at ( c, r ) = m_agent_board.at ( c, r ) = Player::Type::invalid;
             }
         }
         std::uniform_int_distribution<std::size_t> dist;
@@ -384,14 +384,14 @@ public:
                 m_location_to_id.at ( c, r ) = id;
                 m_id_to_location.at ( id ) = std::move ( Location ( c, r ) );
 
-                m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == 1 ? Player::type::agent : Player::type::vacant;
+                m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == 1 ? Player::Type::agent : Player::Type::vacant;
 
-                m_zobrist_keys.at ( ( intptr_t ) Player::type::agent, c, r ) = dist ( g_rng );
-                m_zobrist_keys.at ( ( intptr_t ) Player::type::human, c, r ) = dist ( g_rng );
+                m_zobrist_keys.at ( ( intptr_t ) Player::Type::agent, c, r ) = dist ( g_rng );
+                m_zobrist_keys.at ( ( intptr_t ) Player::Type::human, c, r ) = dist ( g_rng );
 
                 if ( r == 1 ) {
 
-                    m_zobrist_hash ^= m_zobrist_keys.at ( ( intptr_t ) Player::type::agent, c, r );
+                    m_zobrist_hash ^= m_zobrist_keys.at ( ( intptr_t ) Player::Type::agent, c, r );
                     m_agent_stone_id.emplace_back ( id );
                 }
 
@@ -416,14 +416,14 @@ public:
                 m_location_to_id.at ( c, r ) = id;
                 m_id_to_location.at ( id ) = std::move ( Location ( c, r ) );
 
-                m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == OB_HOME_ROW ( S ) ? Player::type::human : Player::type::vacant;
+                m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == OB_HOME_ROW ( S ) ? Player::Type::human : Player::Type::vacant;
 
-                m_zobrist_keys.at ( ( intptr_t ) Player::type::agent, c, r ) = dist ( g_rng );
-                m_zobrist_keys.at ( ( intptr_t ) Player::type::human, c, r ) = dist ( g_rng );
+                m_zobrist_keys.at ( ( intptr_t ) Player::Type::agent, c, r ) = dist ( g_rng );
+                m_zobrist_keys.at ( ( intptr_t ) Player::Type::human, c, r ) = dist ( g_rng );
 
                 if ( r == OB_HOME_ROW ( S ) ) {
 
-                    m_zobrist_hash ^= m_zobrist_keys.at ( ( intptr_t ) Player::type::human, c, r );
+                    m_zobrist_hash ^= m_zobrist_keys.at ( ( intptr_t ) Player::Type::human, c, r );
                     m_human_stone_id.emplace_back ( id );
                 }
 
@@ -447,7 +447,7 @@ public:
 
         for ( r = 0; r < OB_ROWS ( S ); ++r ) {
             for ( c = 0; c < OB_COLS ( S ); ++c ) {
-                m_human_board.at ( c, r ) = m_agent_board.at ( c, r ) = Player::type::invalid;
+                m_human_board.at ( c, r ) = m_agent_board.at ( c, r ) = Player::Type::invalid;
             }
         }
 
@@ -459,7 +459,7 @@ public:
 
         for ( r = 1; r < OB_ROWS ( S ) / 2; ++r, ++li, --ri ) {
             for ( c = li; c < ri; c += 2 ) {
-                m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == 1 ? Player::type::agent : Player::type::vacant;
+                m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == 1 ? Player::Type::agent : Player::Type::vacant;
                 if ( r == 1 ) {
                     m_agent_stone_id.emplace_back ( id );
                 }
@@ -475,7 +475,7 @@ public:
 
             for ( c = li; c < ri; c += 2 ) {
 
-                m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == OB_HOME_ROW ( S ) ? Player::type::human : Player::type::vacant;
+                m_human_board.at_r ( c, r ) = m_agent_board.at ( c, r ) = r == OB_HOME_ROW ( S ) ? Player::Type::human : Player::Type::vacant;
 
                 if ( r == OB_HOME_ROW ( S ) ) {
 
@@ -489,8 +489,8 @@ public:
         m_no_home_agent = 0;
         m_no_home_human = 0;
 
-        m_player = m_winner == Player::type::vacant ? Player::random ( ) : m_winner;
-        m_winner = Player::type::vacant;
+        m_player = m_winner == Player::Type::vacant ? Player::random ( ) : m_winner;
+        m_winner = Player::Type::vacant;
 
         m_move = Move::root;
     }
@@ -542,15 +542,15 @@ public:
     }
 
     [[ nodiscard ]] bool haveStones ( const Player player_ ) const noexcept {
-        return player_ == Player::type::agent ? m_agent_stone_id.size ( ) : m_human_stone_id.size ( );
+        return player_ == Player::Type::agent ? m_agent_stone_id.size ( ) : m_human_stone_id.size ( );
     }
 
     [[ nodiscard ]] bool notHaveStones ( const Player player_ ) const noexcept {
-        return player_ == Player::type::agent ? m_agent_stone_id.empty ( ) : m_human_stone_id.empty ( );
+        return player_ == Player::Type::agent ? m_agent_stone_id.empty ( ) : m_human_stone_id.empty ( );
     }
 
     [[ nodiscard ]] bool haveRemainingHome ( const Player player_ ) const noexcept {
-        return player_ == Player::type::agent ? m_no_home_agent and m_no_home_agent == m_agent_stone_id.size ( ) : m_no_home_human and m_no_home_human == m_human_stone_id.size ( );
+        return player_ == Player::Type::agent ? m_no_home_agent and m_no_home_agent == m_agent_stone_id.size ( ) : m_no_home_human and m_no_home_human == m_human_stone_id.size ( );
     }
 
     [[ nodiscard ]] ZobristHash zobrist ( ) const noexcept {
@@ -592,7 +592,7 @@ public:
 
     [[ nodiscard ]] Move const randomMove ( ) const noexcept {
         Move move;
-        if ( m_player == Player::type::agent ) {
+        if ( m_player == Player::Type::agent ) {
             StoneID ids ( m_agent_stone_id );
             while ( ids.size ( ) ) {
                 const index_t i = std::uniform_int_distribution<index_t> ( 0, ( index_t ) ids.size ( ) - 1 ) ( g_rng );
@@ -667,10 +667,10 @@ public:
         }
         // Human's perspective from here on.
         const Move move ( other ( m_id_to_location.at ( f_ ) ), other ( m_id_to_location.at ( t_ ) ) );
-        if ( m_human_board.at ( move.m_from.c, move.m_from.r ) not_eq Player::type::human
-             or m_human_board.at ( move.m_to.c, move.m_to.r ) not_eq Player::type::vacant
+        if ( m_human_board.at ( move.m_from.c, move.m_from.r ) not_eq Player::Type::human
+             or m_human_board.at ( move.m_to.c, move.m_to.r ) not_eq Player::Type::vacant
              or ( move.m_to.r - move.m_from.r == 2
-                  and m_human_board.at ( ( move.m_from.c + move.m_to.c ) / 2, ( move.m_from.r + move.m_to.r ) / 2 ) not_eq Player::type::agent ) ) {
+                  and m_human_board.at ( ( move.m_from.c + move.m_to.c ) / 2, ( move.m_from.r + move.m_to.r ) / 2 ) not_eq Player::Type::agent ) ) {
             return Move::invalid;
         }
         return move;
@@ -681,17 +681,17 @@ private:
     // Do Player's Move.
 
     void moveStoneHash ( const Player player_, const Move & move_ ) noexcept {
-        if ( player_ == Player::type::agent ) {
-            m_agent_board.at ( move_.m_from.c, move_.m_from.r ) = m_human_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::type::vacant;
-            m_agent_board.at ( move_.m_to.c, move_.m_to.r ) = m_human_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::type::agent;
+        if ( player_ == Player::Type::agent ) {
+            m_agent_board.at ( move_.m_from.c, move_.m_from.r ) = m_human_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::Type::vacant;
+            m_agent_board.at ( move_.m_to.c, move_.m_to.r ) = m_human_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::Type::agent;
             ( *std::find ( std::begin ( m_agent_stone_id ), std::end ( m_agent_stone_id ), m_location_to_id.at ( move_.m_from.c, move_.m_from.r ) ) ) = m_location_to_id.at ( move_.m_to.c, move_.m_to.r );
             m_zobrist_hash ^= m_zobrist_keys.at ( 0, move_.m_from.c, move_.m_from.r );
             m_zobrist_hash ^= m_zobrist_keys.at ( 0, move_.m_to.c, move_.m_to.r );
             m_no_home_agent += move_.m_to.r == OB_HOME_ROW ( S );
         }
         else {
-            m_human_board.at ( move_.m_from.c, move_.m_from.r ) = m_agent_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::type::vacant;
-            m_human_board.at ( move_.m_to.c, move_.m_to.r ) = m_agent_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::type::human;
+            m_human_board.at ( move_.m_from.c, move_.m_from.r ) = m_agent_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::Type::vacant;
+            m_human_board.at ( move_.m_to.c, move_.m_to.r ) = m_agent_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::Type::human;
             ( *std::find ( std::begin ( m_human_stone_id ), std::end ( m_human_stone_id ), m_location_to_id.at_r ( move_.m_from.c, move_.m_from.r ) ) ) = m_location_to_id.at_r ( move_.m_to.c, move_.m_to.r );
             m_zobrist_hash ^= m_zobrist_keys.at ( 1, move_.m_from.c, move_.m_from.r );
             m_zobrist_hash ^= m_zobrist_keys.at ( 1, move_.m_to.c, move_.m_to.r );
@@ -701,13 +701,13 @@ private:
 
     void captureStoneHash ( const Player player_, const Move & move_ ) noexcept {
         const Location captured = move_.captured ( );
-        if ( player_ == Player::type::agent ) {
-            m_agent_board.at ( captured.c, captured.r ) = m_human_board.at_r ( captured.c, captured.r ) = Player::type::vacant;
+        if ( player_ == Player::Type::agent ) {
+            m_agent_board.at ( captured.c, captured.r ) = m_human_board.at_r ( captured.c, captured.r ) = Player::Type::vacant;
             m_human_stone_id.erase ( std::remove ( std::begin ( m_human_stone_id ), std::end ( m_human_stone_id ), m_location_to_id.at ( captured.c, captured.r ) ), std::end ( m_human_stone_id ) );
             m_zobrist_hash ^= m_zobrist_keys.at ( 1, ( OB_COLS ( S ) - 1 ) - captured.c, ( OB_ROWS ( S ) - 1 ) - captured.r );
         }
         else {
-            m_human_board.at ( captured.c, captured.r ) = m_agent_board.at_r ( captured.c, captured.r ) = Player::type::vacant;
+            m_human_board.at ( captured.c, captured.r ) = m_agent_board.at_r ( captured.c, captured.r ) = Player::Type::vacant;
             m_agent_stone_id.erase ( std::remove ( std::begin ( m_agent_stone_id ), std::end ( m_agent_stone_id ), m_location_to_id.at_r ( captured.c, captured.r ) ), std::end ( m_agent_stone_id ) );
             m_zobrist_hash ^= m_zobrist_keys.at ( 0, ( OB_COLS ( S ) - 1 ) - captured.c, ( OB_ROWS ( S ) - 1 ) - captured.r );
         }
@@ -715,15 +715,15 @@ private:
 
 
     void moveStone ( const Player player_, const Move & move_ ) noexcept {
-        if ( player_ == Player::type::agent ) {
-            m_agent_board.at ( move_.m_from.c, move_.m_from.r ) = m_human_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::type::vacant;
-            m_agent_board.at ( move_.m_to.c, move_.m_to.r ) = m_human_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::type::agent;
+        if ( player_ == Player::Type::agent ) {
+            m_agent_board.at ( move_.m_from.c, move_.m_from.r ) = m_human_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::Type::vacant;
+            m_agent_board.at ( move_.m_to.c, move_.m_to.r ) = m_human_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::Type::agent;
             ( *std::find ( std::begin ( m_agent_stone_id ), std::end ( m_agent_stone_id ), m_location_to_id.at ( move_.m_from.c, move_.m_from.r ) ) ) = m_location_to_id.at ( move_.m_to.c, move_.m_to.r );
             m_no_home_agent += move_.m_to.r == OB_HOME_ROW ( S );
         }
         else {
-            m_human_board.at ( move_.m_from.c, move_.m_from.r ) = m_agent_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::type::vacant;
-            m_human_board.at ( move_.m_to.c, move_.m_to.r ) = m_agent_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::type::human;
+            m_human_board.at ( move_.m_from.c, move_.m_from.r ) = m_agent_board.at_r ( move_.m_from.c, move_.m_from.r ) = Player::Type::vacant;
+            m_human_board.at ( move_.m_to.c, move_.m_to.r ) = m_agent_board.at_r ( move_.m_to.c, move_.m_to.r ) = Player::Type::human;
             ( *std::find ( std::begin ( m_human_stone_id ), std::end ( m_human_stone_id ), m_location_to_id.at_r ( move_.m_from.c, move_.m_from.r ) ) ) = m_location_to_id.at_r ( move_.m_to.c, move_.m_to.r );
             m_no_home_agent += move_.m_to.r == OB_HOME_ROW ( S );
         }
@@ -731,19 +731,19 @@ private:
 
     void captureStone ( const Player player_, const Move & move_ ) noexcept {
         const Location captured = move_.captured ( );
-        if ( player_ == Player::type::agent ) {
-            m_agent_board.at ( captured.c, captured.r ) = m_human_board.at_r ( captured.c, captured.r ) = Player::type::vacant;
+        if ( player_ == Player::Type::agent ) {
+            m_agent_board.at ( captured.c, captured.r ) = m_human_board.at_r ( captured.c, captured.r ) = Player::Type::vacant;
             m_human_stone_id.erase ( std::remove ( std::begin ( m_human_stone_id ), std::end ( m_human_stone_id ), m_location_to_id.at ( captured.c, captured.r ) ), std::end ( m_human_stone_id ) );
         }
         else {
-            m_human_board.at ( captured.c, captured.r ) = m_agent_board.at_r ( captured.c, captured.r ) = Player::type::vacant;
+            m_human_board.at ( captured.c, captured.r ) = m_agent_board.at_r ( captured.c, captured.r ) = Player::Type::vacant;
             m_agent_stone_id.erase ( std::remove ( std::begin ( m_agent_stone_id ), std::end ( m_agent_stone_id ), m_location_to_id.at_r ( captured.c, captured.r ) ), std::end ( m_agent_stone_id ) );
         }
     }
 
 
     bool checkMove ( const Player p_, const Move & move_ ) const noexcept {
-        return m_player == Player::type::agent ? not ( m_location_to_id.at ( move_.m_from.c, move_.m_from.r ) == -1 or m_location_to_id.at ( move_.m_to.c, move_.m_to.r ) == -1 ) : not ( m_location_to_id.at_r ( move_.m_from.c, move_.m_from.r ) == -1 or m_location_to_id.at_r ( move_.m_to.c, move_.m_to.r ) == -1 );
+        return m_player == Player::Type::agent ? not ( m_location_to_id.at ( move_.m_from.c, move_.m_from.r ) == -1 or m_location_to_id.at ( move_.m_to.c, move_.m_to.r ) == -1 ) : not ( m_location_to_id.at_r ( move_.m_from.c, move_.m_from.r ) == -1 or m_location_to_id.at_r ( move_.m_to.c, move_.m_to.r ) == -1 );
     }
 
 public:
@@ -792,13 +792,13 @@ public:
         Move move ( Location ( c_, r_ ) );
         ++c_; ++r_;
         const Player player = b_.at ( c_, r_ );
-        if ( player == Player::type::vacant ) { // ExtendedMove.
+        if ( player == Player::Type::vacant ) { // ExtendedMove.
             move.m_to = std::move ( Location ( c_, r_ ) );
             return move;
         }
         else if ( player == b_.at ( move.m_from.c, move.m_from.r ).opponent ( ) ) { // Capture.
             ++c_; ++r_;
-            if ( b_.at ( c_, r_ ) == Player::type::vacant ) {
+            if ( b_.at ( c_, r_ ) == Player::Type::vacant ) {
                 move.m_to = std::move ( Location ( c_, r_ ) );
                 return move;
             }
@@ -810,13 +810,13 @@ public:
         Move move ( Location ( c_, r_ ) );
         --c_; ++r_;
         const Player player = b_.at ( c_, r_ );
-        if ( player == Player::type::vacant ) { // ExtendedMove.
+        if ( player == Player::Type::vacant ) { // ExtendedMove.
             move.m_to = std::move ( Location ( c_, r_ ) );
             return move;
         }
         else if ( player == b_.at ( move.m_from.c, move.m_from.r ).opponent ( ) ) { // Capture.
             --c_; ++r_;
-            if ( b_.at ( c_, r_ ) == Player::type::vacant ) {
+            if ( b_.at ( c_, r_ ) == Player::Type::vacant ) {
                 move.m_to = std::move ( Location ( c_, r_ ) );
                 return move;
             }
@@ -831,7 +831,7 @@ public:
         }
         moves_->clear ( );
         Move move;
-        if ( m_player == Player::type::agent ) {
+        if ( m_player == Player::Type::agent ) {
             for ( const index_t s : m_agent_stone_id ) {
                 const Location l = m_id_to_location.at ( s );
                 move = leftMove ( m_agent_board, l.c, l.r );
@@ -870,7 +870,7 @@ public:
 
 
     [[ nodiscard ]] bool hasMoves ( const Player player_ ) const noexcept {
-        if ( player_ == Player::type::agent ) {
+        if ( player_ == Player::Type::agent ) {
             for ( const index_t s : m_agent_stone_id ) {
                 const Location l = m_id_to_location.at ( s );
                 if ( leftMove ( m_agent_board, l.c, l.r ) != Move::invalid ) {
@@ -936,10 +936,10 @@ public:
             putchar ( ' ' );
             for ( index_t c = 0; c < OB_COLS ( S ); ++c ) {
                 switch ( b_.at ( c, r ) ) {
-                    case Player::type::vacant: putchar ( '*' ); break;
-                    case Player::type::human: putchar ( 'H' ); break;
-                    case Player::type::agent: putchar ( 'A' ); break;
-                    case Player::type::invalid: putchar ( ' ' ); break;
+                    case Player::Type::vacant: putchar ( '*' ); break;
+                    case Player::Type::human: putchar ( 'H' ); break;
+                    case Player::Type::agent: putchar ( 'A' ); break;
+                    case Player::Type::invalid: putchar ( ' ' ); break;
                     default: putchar ( '?' );
                 }
                 if ( c < OB_COLS ( S ) ) {

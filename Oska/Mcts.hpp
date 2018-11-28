@@ -183,7 +183,7 @@ namespace mcts {
         float m_score = 0.0f; // 4 bytes.
         std::int32_t m_visits = 0; // 4 bytes.
 
-        Player m_player_just_moved = Player::type::invalid; // 1 byte.
+        Player m_player_just_moved = Player::Type::invalid; // 1 byte.
 
         // Constructors.
 
@@ -595,7 +595,7 @@ namespace mcts {
                 connectStatesPath ( state_ );
             }
             const Player player = state_.playerToMove ( );
-            if ( player == Player::type::agent ) {
+            if ( player == Player::Type::agent ) {
                 // m_path.print ( );
             }
             // max_iterations_ -= m_tree.nodeNum ( );
@@ -606,7 +606,7 @@ namespace mcts {
                 while ( hasNoUntriedMoves ( node ) and hasChildren ( node ) ) {
                     // UCT is only applied in nodes of which the visit count
                     // is higher than a certain threshold T
-                    // Link child = player == Player::type::agent and m_tree [ node ].m_visits < threshold ? selectChildRandom ( node ) :
+                    // Link child = player == Player::Type::agent and m_tree [ node ].m_visits < threshold ? selectChildRandom ( node ) :
                     Link child = selectChildUCT ( node );
                     state.move_hash ( m_tree [ child.arc ].m_move );
                     m_path.push ( child );
@@ -635,7 +635,7 @@ namespace mcts {
                 // children of a node when a node's visit count equals T
 
                 if ( hasUntriedMoves ( node ) ) {
-                    //if ( player == Player::type::agent and m_tree [ node ].m_visits < threshold )
+                    //if ( player == Player::Type::agent and m_tree [ node ].m_visits < threshold )
                     state.move_hash_winner ( getUntriedMove ( node ) ); // State update.
                     m_path.push ( addChild ( node, state ) );
                 }
@@ -643,7 +643,7 @@ namespace mcts {
                 // The player in back of path is player ( the player to move ).We now play
                 // randomly until the game ends.
 
-                if ( player == Player::type::human ) {
+                if ( player == Player::Type::human ) {
                     state.simulate ( );
                     for ( Link link : m_path ) {
                         // We have now reached a final state. Backpropagate the result up the
@@ -784,7 +784,7 @@ namespace mcts {
 
                     mcts_->m_tree.setRoot ( new_root_node );
 
-                    if ( player_ == Player::type::agent ) {
+                    if ( player_ == Player::Type::agent ) {
 
                         // std::cout << "new root node " << ( int ) new_root_node << ", node num " << mcts_->m_tree.nodeNum ( ) << "\n";
                     }
